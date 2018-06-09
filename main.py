@@ -73,7 +73,6 @@ def encode_features(df_train, df_test):
 
 data_train, data_test = encode_features(data_train, data_test)
 
-data_train.head()
 X_all = data_train.drop(['Survived', 'PassengerId'], axis=1)
 
 y_all = data_train['Survived']
@@ -84,16 +83,14 @@ X_train, X_test, y_train, y_test = train_test_split(X_all, y_all, test_size=num_
 max_length = 9
 model = Sequential()
 # 96*7
-model.add(Embedding(868, 32, input_length=max_length))
+model.add(Embedding(868, 50, input_length=max_length))
 model.add(Flatten())
-model.add(Dense(32, input_dim=max_length, activation='relu'))
-# model.add(Dense(250, activation='relu'))
+model.add(Dense(10, input_dim=max_length, activation='relu'))
+model.add(Dense(100, activation='relu'))
 model.add(Dense(1, activation='sigmoid'))
 
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=5, batch_size=60)
-
-score = model.evaluate(X_test, y_test)
+model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=6, batch_size=60)
 
 # Predict Result
 ids = data_test['PassengerId']
