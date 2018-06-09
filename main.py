@@ -51,9 +51,12 @@ def transform_features(df):
     return df
 
 
+def extract_result(array):
+    return array[0]
+
+
 data_train = transform_features(data_train)
 data_test = transform_features(data_test)
-data_train.head()
 
 
 def encode_features(df_train, df_test):
@@ -69,41 +72,36 @@ def encode_features(df_train, df_test):
 
 
 data_train, data_test = encode_features(data_train, data_test)
+
 data_train.head()
-
 X_all = data_train.drop(['Survived', 'PassengerId'], axis=1)
-y_all = data_train['Survived']
 
+y_all = data_train['Survived']
 num_test = 0.20
+
 X_train, X_test, y_train, y_test = train_test_split(X_all, y_all, test_size=num_test, random_state=23)
 
 max_length = 9
-
 model = Sequential()
 # 96*7
 model.add(Embedding(868, 32, input_length=max_length))
 model.add(Flatten())
 model.add(Dense(32, input_dim=max_length, activation='relu'))
-#model.add(Dense(250, activation='relu'))
+# model.add(Dense(250, activation='relu'))
 model.add(Dense(1, activation='sigmoid'))
-model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=5, batch_size=60)
+
 score = model.evaluate(X_test, y_test)
 
-# Predict
+# Predict Result
 ids = data_test['PassengerId']
 
 predictions = model.predict_classes(data_test.drop('PassengerId', axis=1))
 
-
-def extract_result(array):
-    return array[0]
-
-
 pred = []
-for pair in map(extract_result, predictions):
-    pred.append(pair)
+[pred.append(pair) for pair in map(extract_result, predictions)]
 
 output = pd.DataFrame({'PassengerId': ids, 'Survived': pred})
 
