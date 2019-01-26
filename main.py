@@ -1,5 +1,9 @@
+import os
+
+import matplotlib.pyplot as plt
 import pandas as pd
-from keras.layers import Dense, Embedding, Flatten
+from keras.callbacks import EarlyStopping, ModelCheckpoint
+from keras.layers import Dense
 from keras.models import Sequential
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
@@ -71,6 +75,30 @@ def encode_features(df_train, df_test):
     return df_train, df_test
 
 
+def plot_history(history):
+    # summarize history for accuracy
+    plt.plot(history.history['acc'])
+    plt.plot(history.history['val_acc'])
+    plt.title('model accuracy')
+    plt.ylabel('accuracy')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.show()
+    # summarize history for loss
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('model loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.show()
+
+
+model_dir = 'models'
+
+if not os.path.exists(model_dir):
+    os.makedirs(model_dir)
+
 data_train, data_test = encode_features(data_train, data_test)
 
 X_all = data_train.drop(['Survived', 'PassengerId'], axis=1)
@@ -80,17 +108,21 @@ num_test = 0.20
 
 X_train, X_test, y_train, y_test = train_test_split(X_all, y_all, test_size=num_test, random_state=23)
 
-max_length = 9
+features = 9
 model = Sequential()
-# 96*7
-model.add(Embedding(868, 50, input_length=max_length))
-model.add(Flatten())
-model.add(Dense(10, input_dim=max_length, activation='relu'))
-model.add(Dense(100, activation='relu'))
+model.add(Dense(20, input_shape=(9,), activation='relu'))
+model.add(Dense(30, activation='relu'))
+model.add(Dense(13, activation='relu'))
 model.add(Dense(1, activation='sigmoid'))
 
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=6, batch_size=60)
+history = model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=300, batch_size=32,
+                    callbacks=[EarlyStopping(monitor='val_loss', patience=20, mode='auto', baseline=None),
+                               ModelCheckpoint(model_dir + '/best_model.h5', monitor='val_loss', save_best_only=True,
+                                               mode='auto')])
+plot_history(history)
+
+model.load_weights(model_dir + '/best_model.h5')
 
 # Predict Result
 ids = data_test['PassengerId']
